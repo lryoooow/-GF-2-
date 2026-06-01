@@ -1,24 +1,27 @@
 # AtmosphericCorrection
 
-基于 Python、GDAL 和 Py6S 的遥感影像大气校正项目。
+基于 Python、GDAL 和 Py6S 的遥感影像大气校正工具。
 
-项目已重构为“公共核心 + 传感器模块”的结构。当前稳定维护的是 GF/GF-2 多光谱影像处理流程；Sentinel 和 Landsat 已预留独立模块，旧版实现保存在 `legacy/` 中，便于后续逐步迁移和升级。
+项目采用按传感器分模块的组织方式，当前主要支持 GF/GF-2 多光谱影像的大气校正流程，并为 Sentinel、Landsat 等传感器保留独立扩展空间。
 
-## 功能状态
+## 功能特性
+
+- 支持 GF/GF-2 MSS 多光谱影像处理
+- 自动读取 GF XML 元数据和 RPB 文件
+- 支持辐射定标参数读取与年份匹配
+- 基于 DEM 计算场景平均高程
+- 调用 Py6S 计算大气校正系数
+- 支持大影像分块处理，降低内存占用
+- 输出缩放后的地表反射率 GeoTIFF
+- 支持单景处理和 `.tar.gz` 批处理入口
+
+## 支持状态
 
 | 传感器 | 状态 | 说明 |
 | --- | --- | --- |
-| GF/GF-2 | 可运行 | 当前主线，已完成模块化重构和本地 GF-2 PMS2 数据验证 |
-| Sentinel | 待迁移 | 已预留模块入口，旧实现保存在 `legacy/` |
-| Landsat | 待迁移 | 已预留模块入口，旧实现保存在 `legacy/` |
-
-当前 GF-2 流程包括：
-
-- 读取 GF MSS 影像、XML 元数据和 RPB 文件
-- 读取辐射定标参数
-- 计算场景平均 DEM 高程
-- 调用 Py6S 获取大气校正系数
-- 按块处理多光谱波段，输出缩放后的地表反射率 GeoTIFF
+| GF/GF-2 | 支持 | 当前主要维护流程，已完成 GF-2 PMS2 数据验证 |
+| Sentinel | 规划中 | 已保留独立模块入口 |
+| Landsat | 规划中 | 已保留独立模块入口 |
 
 ## 目录结构
 
@@ -27,9 +30,9 @@ AtmosphericCorrection/
   atmcorr/
     common/              # DEM、6S、栅格处理、坐标转换等公共能力
     sensors/
-      gf/                # GF/GF-2 当前可运行主线
-      sentinel/          # Sentinel 后续迁移模块
-      landsat/           # Landsat 后续迁移模块
+      gf/                # GF/GF-2 处理模块
+      sentinel/          # Sentinel 模块
+      landsat/           # Landsat 模块
   data/
     GMTED2km.tif
     RadiometricCorrectionParameter.json
@@ -42,7 +45,6 @@ AtmosphericCorrection/
     run_gf_batch.py
     run_sentinel.py
     run_landsat.py
-  legacy/                # 原始旧脚本备份
   environment.yml
   README.md
 ```
@@ -93,7 +95,7 @@ conda run -n atmocorr311 python scripts\run_gf.py `
   --output-dir "D:\output\gf2_corrected"
 ```
 
-也可以把 `--input-dir` 指向包含多个 GF 场景目录的父目录，程序会自动查找含 MSS 影像的 GF 场景。
+也可以把 `--input-dir` 指向包含多个 GF 场景目录的父目录，程序会自动查找包含 MSS 影像的 GF 场景。
 
 ## 常用参数
 
@@ -129,8 +131,6 @@ conda run -n atmocorr311 python scripts\run_gf_batch.py `
   --workers 3
 ```
 
-该入口保留了旧版批处理能力，后续还可以继续增强错误恢复、日志和任务队列。
-
 ## 开发说明
 
 核心模块职责：
@@ -151,4 +151,3 @@ python -m compileall -q atmcorr scripts
 
 - 当前 `data/RadiometricCorrectionParameter.json` 中部分 GF2/PMS2 定标参数只到 2019。如果处理更晚年份影像，程序会按 `--fallback-year` 使用备用年份并输出警告。
 - `fallback-year` 适合流程测试，不建议直接作为最终科学产品依据。
-- Sentinel 和 Landsat 模块当前只是结构化入口，正式迁移前请参考 `legacy/` 中原始脚本。
