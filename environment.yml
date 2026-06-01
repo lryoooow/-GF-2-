@@ -1,0 +1,10 @@
+name: atmocorr311
+channels:
+  - https://conda.anaconda.org/conda-forge
+  - nodefaults
+dependencies:
+  - python=3.11
+  - gdal
+  - numpy
+  - tqdm
+  - py6s
