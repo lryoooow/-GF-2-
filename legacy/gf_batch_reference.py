@@ -1,10 +1,10 @@
-#!usr/bin/env python
+﻿#!usr/bin/env python
 # -*- coding: utf-8 -*-
 """
 @Author  : zhaoguanhua
 @Email   :
 @Time    : 2021/4/2 16:01
-@File    : AtmosphericCorrection_multiprocess.py
+@File    : SurfaceReflectance_multiprocess.py
 @Software: PyCharm
 """
 from multiprocessing import Pool
@@ -12,7 +12,7 @@ import os,time,random
 import glob
 import json
 import gdal
-from AtmosphericCorrection_GF import untar,Block
+from SurfaceReflectance_GF import untar,Block
 
 def long_time_task(name):
     print('run task {} {} ...'.format(name,os.getpid()))
@@ -28,11 +28,9 @@ def atmospheric_correction(file_path,input_dir,output_dir,config):
     fileType = file_name[0:2]
     filename_split = file_name.split("_")
 
-    GFType = filename_split[1][:3]     #传感器
-    untar_dirname = file_name[:-7]                 #解压后影像文件夹名
-    untar_dir = os.path.join(input_dir, untar_dirname)#解压后影像文件夹路径
+    GFType = filename_split[1][:3]     #浼犳劅鍣?    untar_dirname = file_name[:-7]                 #瑙ｅ帇鍚庡奖鍍忔枃浠跺す鍚?    untar_dir = os.path.join(input_dir, untar_dirname)#瑙ｅ帇鍚庡奖鍍忔枃浠跺す璺緞
 
-    print("文件" + file_path + "开始解压缩")
+    print("鏂囦欢" + file_path + "寮€濮嬭В鍘嬬缉")
 
     try:
         untar(file_path, untar_dir)
@@ -47,19 +45,18 @@ def atmospheric_correction(file_path,input_dir,output_dir,config):
         tiffFile = glob.glob(os.path.join(untar_dir, "*MSS*.tiff"))[0]
         metedata = glob.glob(os.path.join(untar_dir, "*MSS*.xml"))[0]
 
-    atcfile_dir = os.path.join(output_dir,untar_dirname) #大气校正结果文件夹
-
+    atcfile_dir = os.path.join(output_dir,untar_dirname) #澶ф皵鏍℃缁撴灉鏂囦欢澶?
     try:
         os.mkdir(atcfile_dir)
     except Exception as e:
         pass
-    # print(filename + "解压缩完成")
+    # print(filename + "瑙ｅ帇缂╁畬鎴?)
 
     try:
         IDataSet = gdal.Open(tiffFile)
         # print(IDataSet)
     except Exception as e:
-        print("文件%S打开失败" % tiffFile)
+        print("鏂囦欢%S鎵撳紑澶辫触" % tiffFile)
 
     # Block(IDataSet)
     ImageType = os.path.basename(tiffFile)[-9:-6]
@@ -71,19 +68,18 @@ if __name__ == '__main__':
     print('Parent process {}'.format(os.getpid()))
     a=time.time()
     script_path = os.path.split(os.path.realpath(__file__))[0]
-    #读取辐射校正和大气校正所需参数:增益、偏移和光谱响应函数
+    #璇诲彇杈愬皠鏍℃鍜屽ぇ姘旀牎姝ｆ墍闇€鍙傛暟:澧炵泭銆佸亸绉诲拰鍏夎氨鍝嶅簲鍑芥暟
     config_file = os.path.join(script_path,"RadiometricCorrectionParameter.json")
     config = json.load(open(config_file))
 
     input_dir=r"D:\test_data"
     output_dir=r"D:\temp"
 
-    #获取影像列表
+    #鑾峰彇褰卞儚鍒楄〃
     GF_files= glob.glob(os.path.join(input_dir,"*.tar.gz"))
     # print(GF_files)
 
-    #进程池
-    p=Pool(3)
+    #杩涚▼姹?    p=Pool(3)
     for gf_file_path in GF_files:
         p.apply_async(atmospheric_correction,args=(gf_file_path,input_dir,output_dir,config,))
 
@@ -93,4 +89,4 @@ if __name__ == '__main__':
     p.join()
     print("All subprocesses done")
     b=time.time()
-    print("总时间:",b-a)
+    print("鎬绘椂闂?",b-a)

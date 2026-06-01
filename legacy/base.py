@@ -1,4 +1,4 @@
-#!usr/bin/env python
+﻿#!usr/bin/env python
 # -*- coding: utf-8 -*-
 """
 @Author  : zhaoguanhua
@@ -16,7 +16,7 @@ gdal.UseExceptions()
 
 def MeanDEM(pointUL, pointDR):
     '''
-    计算影像所在区域的平均高程.
+    璁＄畻褰卞儚鎵€鍦ㄥ尯鍩熺殑骞冲潎楂樼▼.
     '''
     script_path = os.path.split(os.path.realpath(__file__))[0]
     dem_path = os.path.join(script_path,"GMTED2km.tif")
@@ -27,27 +27,25 @@ def MeanDEM(pointUL, pointDR):
 
     DEMBand = DEMIDataSet.GetRasterBand(1)
     geotransform = DEMIDataSet.GetGeoTransform()
-    # DEM分辨率
-    pixelWidth = geotransform[1]
+    # DEM鍒嗚鲸鐜?    pixelWidth = geotransform[1]
     pixelHight = geotransform[5]
 
-    # DEM起始点：左上角，X：经度，Y：纬度
-    originX = geotransform[0]
+    # DEM璧峰鐐癸細宸︿笂瑙掞紝X锛氱粡搴︼紝Y锛氱含搴?    originX = geotransform[0]
     originY = geotransform[3]
 
-    # 研究区左上角在DEM矩阵中的位置
+    # 鐮旂┒鍖哄乏涓婅鍦―EM鐭╅樀涓殑浣嶇疆
     yoffset1 = int((originY - pointUL['lat']) / pixelWidth)
     xoffset1 = int((pointUL['lon'] - originX) / (-pixelHight))
 
-    # 研究区右下角在DEM矩阵中的位置
+    # 鐮旂┒鍖哄彸涓嬭鍦―EM鐭╅樀涓殑浣嶇疆
     yoffset2 = int((originY - pointDR['lat']) / pixelWidth)
     xoffset2 = int((pointDR['lon'] - originX) / (-pixelHight))
 
-    # 研究区矩阵行列数
+    # 鐮旂┒鍖虹煩闃佃鍒楁暟
     xx = xoffset2 - xoffset1
     yy = yoffset2 - yoffset1
-    # 读取研究区内的数据，并计算高程
-    DEMRasterData = DEMBand.ReadAsArray(xoffset1, yoffset1, xx, yy)
+    # 璇诲彇鐮旂┒鍖哄唴鐨勬暟鎹紝骞惰绠楅珮绋?    DEMRasterData = DEMBand.ReadAsArray(xoffset1, yoffset1, xx, yy)
 
     MeanAltitude = np.mean(DEMRasterData)
     return MeanAltitude
+

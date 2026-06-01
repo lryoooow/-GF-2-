@@ -1,4 +1,4 @@
-# AtmosphericCorrection
+# GF-2 Py6S Corrector
 
 基于 Python、GDAL 和 Py6S 的遥感影像大气校正工具。
 
@@ -26,7 +26,7 @@
 ## 目录结构
 
 ```text
-AtmosphericCorrection/
+GF-2-Py6S-Corrector/
   atmcorr/
     common/              # DEM、6S、栅格处理、坐标转换等公共能力
     sensors/

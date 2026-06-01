@@ -1,7 +1,7 @@
-#! usr/bin/env python
+﻿#! usr/bin/env python
 # -*- coding:utf-8 -*-
 # created by zhaoguanhua 2017/9/25
-# AtmosphericCorrection for Landsat8
+# SurfaceReflectance for Landsat8
 
 import glob
 import os
@@ -25,13 +25,12 @@ def parse_arguments(argv):
 
     return parser.parse_args(argv)
 
-# 逐波段辐射定标
-def RadiometricCalibration(BandId):
-    # LandSat8 TM辐射定标参数
+# 閫愭尝娈佃緪灏勫畾鏍?def RadiometricCalibration(BandId):
+    # LandSat8 TM杈愬皠瀹氭爣鍙傛暟
     global data2,ImgRasterData
     parameter_OLI = numpy.zeros((9,2))
 
-    #计算辐射亮度参数
+    #璁＄畻杈愬皠浜害鍙傛暟
     parameter_OLI[0,0] = float(''.join(re.findall('RADIANCE_MULT_BAND_1.+',data2)[0]).split("=")[1])
     parameter_OLI[1,0] = float(''.join(re.findall('RADIANCE_MULT_BAND_2.+',data2)).split("=")[1])
     parameter_OLI[2,0] = float(''.join(re.findall('RADIANCE_MULT_BAND_3.+',data2)).split("=")[1])
@@ -58,10 +57,10 @@ def RadiometricCalibration(BandId):
     RaCal = numpy.where(ImgRasterData>0 ,Gain * ImgRasterData + Bias,-9999)
     return (RaCal)
 
-# 6s大气校正
-def AtmosphericCorrection(BandId):
+# 6s澶ф皵鏍℃
+def SurfaceReflectance(BandId):
     global data
-    # 6S模型
+    # 6S妯″瀷
     s = SixS()
 
     s.geometry = Geometry.User()
@@ -71,15 +70,14 @@ def AtmosphericCorrection(BandId):
     s.geometry.view_a = 0
 
 
-    # 日期
+    # 鏃ユ湡
     Dateparm = ''.join(re.findall('DATE_ACQUIRED.+',data2)).split("=")
     Date = Dateparm[1].split('-')
 
     s.geometry.month = int(Date[1])
     s.geometry.day = int(Date[2])
 
-    # 中心经纬度
-    point1lat = float(''.join(re.findall('CORNER_UL_LAT_PRODUCT.+',data2)).split("=")[1])
+    # 涓績缁忕含搴?    point1lat = float(''.join(re.findall('CORNER_UL_LAT_PRODUCT.+',data2)).split("=")[1])
     point1lon = float(''.join(re.findall('CORNER_UL_LON_PRODUCT.+',data2)).split("=")[1])
     point2lat = float(''.join(re.findall('CORNER_UR_LAT_PRODUCT.+',data2)).split("=")[1])
     point2lon = float(''.join(re.findall('CORNER_UR_LON_PRODUCT.+',data2)).split("=")[1])
@@ -91,7 +89,7 @@ def AtmosphericCorrection(BandId):
     sLongitude = (point1lon + point2lon + point3lon + point4lon) / 4
     sLatitude = (point1lat + point2lat + point3lat + point4lat) / 4
 
-    # 大气模式类型
+    # 澶ф皵妯″紡绫诲瀷
     if sLatitude > -15 and sLatitude <= 15:
         s.atmos_profile = AtmosProfile.PredefinedType(AtmosProfile.Tropical)
 
@@ -107,18 +105,15 @@ def AtmosphericCorrection(BandId):
         else:
             s.atmos_profile = AtmosProfile.PredefinedType(AtmosProfile.SubarcticWinter)
 
-    # 气溶胶类型大陆
-    s.aero_profile = AtmosProfile.PredefinedType(AeroProfile.Continental)
+    # 姘旀憾鑳剁被鍨嬪ぇ闄?    s.aero_profile = AtmosProfile.PredefinedType(AeroProfile.Continental)
 
-    # 目标地物？？？？？？
+    # 鐩爣鍦扮墿锛燂紵锛燂紵锛燂紵
     s.ground_reflectance = GroundReflectance.HomogeneousLambertian(0.36)
 
-    # 550nm气溶胶光学厚度,根据日期从MODIS处获取。
-    #s.visibility=40.0
+    # 550nm姘旀憾鑳跺厜瀛﹀帤搴?鏍规嵁鏃ユ湡浠嶮ODIS澶勮幏鍙栥€?    #s.visibility=40.0
     s.aot550 = 0.14497
 
-    # 通过研究去区的范围去求DEM高度。
-    pointUL = dict()
+    # 閫氳繃鐮旂┒鍘诲尯鐨勮寖鍥村幓姹侱EM楂樺害銆?    pointUL = dict()
     pointDR = dict()
     pointUL["lat"] = point1lat
     pointUL["lon"] = point1lon
@@ -126,12 +121,12 @@ def AtmosphericCorrection(BandId):
     pointDR["lon"] = point2lon
     meanDEM = (MeanDEM(pointUL, pointDR)) * 0.001
 
-    # 研究区海拔、卫星传感器轨道高度
+    # 鐮旂┒鍖烘捣鎷斻€佸崼鏄熶紶鎰熷櫒杞ㄩ亾楂樺害
     s.altitudes = Altitudes()
     s.altitudes.set_target_custom_altitude(meanDEM)
     s.altitudes.set_sensor_satellite_level()
 
-    # 校正波段（根据波段名称）
+    # 鏍℃娉㈡锛堟牴鎹尝娈靛悕绉帮級
     if BandId == '1':
         s.wavelength = Wavelength(PredefinedWavelengths.LANDSAT_OLI_B1)
 
@@ -159,10 +154,10 @@ def AtmosphericCorrection(BandId):
     elif BandId == '9':
         s.wavelength = Wavelength(PredefinedWavelengths.LANDSAT_OLI_B9)
 
-    # 下垫面非均一、朗伯体
+    # 涓嬪灚闈㈤潪鍧囦竴銆佹湕浼綋
     s.atmos_corr = AtmosCorr.AtmosCorrLambertianFromReflectance(-0.1)
 
-    # 运行6s大气模型
+    # 杩愯6s澶ф皵妯″瀷
     s.run()
 
     xa = s.outputs.coef_xa
@@ -173,18 +168,18 @@ def AtmosphericCorrection(BandId):
 
 if __name__ == '__main__':
 
-    #输入数据路径
+    #杈撳叆鏁版嵁璺緞
     RootInputPath = parse_arguments(sys.argv[1:]).Input_dir
     RootOutName = parse_arguments(sys.argv[2:]).Output_dir
 
-    #创建日志文件
+    #鍒涘缓鏃ュ織鏂囦欢
     LogFile = open(os.path.join(RootOutName,'log.txt'),'w')
 
     for root,dirs,RSFiles in os.walk(RootInputPath):
 
-        #判断是否进入最底层
+        #鍒ゆ柇鏄惁杩涘叆鏈€搴曞眰
         if len(dirs)==0:
-            #根据输入输出路径建立生成新文件的路径
+            #鏍规嵁杈撳叆杈撳嚭璺緞寤虹珛鐢熸垚鏂版枃浠剁殑璺緞
             RootInputPathList = RootInputPath.split(os.path.sep)
             RootList = root.split(os.path.sep)
             StartList = len(RootInputPathList)
@@ -213,54 +208,51 @@ if __name__ == '__main__':
                 RSbands = glob.glob(os.path.join(root,"B0[1-8].tiff"))
             else:
                 RSbands = glob.glob(os.path.join(root,"*B[1-8].TIF"))
-            print('影像'+root+'开始大气校正')
+            print('褰卞儚'+root+'寮€濮嬪ぇ姘旀牎姝?)
             print(RSbands)
             for tifFile in RSbands:
 
                 BandId = (os.path.basename(tifFile).split('.')[0])[-1]
 
-                #捕捉打开数据出错异常
+                #鎹曟崏鎵撳紑鏁版嵁鍑洪敊寮傚父
                 try:
                     IDataSet = gdal.Open(tifFile)
                 except Exception as e:
-                    print("文件%S打开失败" % tifFile)
-                    LogFile.write('\n'+tifFile+'数据打开失败')
+                    print("鏂囦欢%S鎵撳紑澶辫触" % tifFile)
+                    LogFile.write('\n'+tifFile+'鏁版嵁鎵撳紑澶辫触')
 
                 if IDataSet == None:
-                    LogFile.write('\n'+tifFile+'数据集读取为空')
+                    LogFile.write('\n'+tifFile+'鏁版嵁闆嗚鍙栦负绌?)
                     continue
                 else:
-                    #获取行列号
-                    cols = IDataSet.RasterXSize
+                    #鑾峰彇琛屽垪鍙?                    cols = IDataSet.RasterXSize
                     rows = IDataSet.RasterYSize
                     ImgBand = IDataSet.GetRasterBand(1)
                     ImgRasterData = ImgBand.ReadAsArray(0, 0, cols, rows)
 
                     if ImgRasterData is None:
-                        LogFile.write('\n'+tifFile+'栅格数据为空')
+                        LogFile.write('\n'+tifFile+'鏍呮牸鏁版嵁涓虹┖')
                         continue
                     else:
-                        #设置输出文件路径
+                        #璁剧疆杈撳嚭鏂囦欢璺緞
                         outFilename=os.path.join(outname,os.path.basename(tifFile))
 
-                        #如果文件存在就跳过，进行下一波段操作
+                        #濡傛灉鏂囦欢瀛樺湪灏辫烦杩囷紝杩涜涓嬩竴娉㈡鎿嶄綔
                         if os.path.isfile(outFilename):
-                            print("%s已经完成" % outFilename)
+                            print("%s宸茬粡瀹屾垚" % outFilename)
                             continue
                         else:
-                            # #辐射校正
+                            # #杈愬皠鏍℃
                             RaCalRaster = RadiometricCalibration(BandId)
-                            #大气校正
-                            a, b, c = AtmosphericCorrection(BandId)
+                            #澶ф皵鏍℃
+                            a, b, c = SurfaceReflectance(BandId)
                             y = numpy.where(RaCalRaster!=-9999,a * RaCalRaster - b,-9999)
                             atc = numpy.where(y!=-9999,(y / (1 + y * c))*10000,-9999)
                             
                             driver = IDataSet.GetDriver()
-                            #输出栅格数据集
-                            outDataset = driver.Create(outFilename, cols, rows, 1, gdal.GDT_Int16)
+                            #杈撳嚭鏍呮牸鏁版嵁闆?                            outDataset = driver.Create(outFilename, cols, rows, 1, gdal.GDT_Int16)
 
-                            # 设置投影信息，与原数据一样
-                            geoTransform = IDataSet.GetGeoTransform()
+                            # 璁剧疆鎶曞奖淇℃伅锛屼笌鍘熸暟鎹竴鏍?                            geoTransform = IDataSet.GetGeoTransform()
                             outDataset.SetGeoTransform(geoTransform)
                             proj = IDataSet.GetProjection()
                             outDataset.SetProjection(proj)
@@ -268,8 +260,9 @@ if __name__ == '__main__':
                             outband = outDataset.GetRasterBand(1)
                             outband.SetNoDataValue(-9999)
                             outband.WriteArray(atc, 0, 0)
-                print('第%s波段计算完成'%BandId)
-            # print(root+'计算完成')
+                print('绗?s娉㈡璁＄畻瀹屾垚'%BandId)
+            # print(root+'璁＄畻瀹屾垚')
             print('\n')
-    #关闭日志文件
+    #鍏抽棴鏃ュ織鏂囦欢
     LogFile.close()
+

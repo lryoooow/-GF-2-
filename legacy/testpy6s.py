@@ -1,4 +1,4 @@
-#! usr/bin/env python
+﻿#! usr/bin/env python
 # -*- coding: utf-8 -*-
 # @Author   : Zhaoguanhua
 # @DateTime : 2018-01-05 11:05:11
@@ -7,17 +7,16 @@ from Py6S import *
 import numpy as np
 
 def testpy6s():
-    # 6S模型
+    # 6S妯″瀷
     s = SixS()
 
-    # 传感器类型 自定义
-    s.geometry = Geometry.User()
+    # 浼犳劅鍣ㄧ被鍨?鑷畾涔?    s.geometry = Geometry.User()
     s.geometry.solar_z = 36
     s.geometry.solar_a = 153
     s.geometry.view_z = 0
     s.geometry.view_a = 0
 
-    # 日期
+    # 鏃ユ湡
     s.geometry.month = 3
     s.geometry.day = 27
 
@@ -26,22 +25,20 @@ def testpy6s():
     s.atmos_profile = AtmosProfile.PredefinedType(AtmosProfile.MidlatitudeWinter)
 
     #print(s.atmos_profile)
-    # 气溶胶类型大陆
-    s.aero_profile = AtmosProfile.PredefinedType(AeroProfile.Continental)
+    # 姘旀憾鑳剁被鍨嬪ぇ闄?    s.aero_profile = AtmosProfile.PredefinedType(AeroProfile.Continental)
 
-    # 下垫面类型
-    s.ground_reflectance = GroundReflectance.HomogeneousLambertian(0.36)
+    # 涓嬪灚闈㈢被鍨?    s.ground_reflectance = GroundReflectance.HomogeneousLambertian(0.36)
 
-    # 550nm气溶胶光学厚度,对应能见度为40km
+    # 550nm姘旀憾鑳跺厜瀛﹀帤搴?瀵瑰簲鑳借搴︿负40km
     s.aot550 = 0.14497
     # s.aot550 = MeanAot(Dateparm[1])
 
-    # 研究区海拔、卫星传感器轨道高度
+    # 鐮旂┒鍖烘捣鎷斻€佸崼鏄熶紶鎰熷櫒杞ㄩ亾楂樺害
     s.altitudes = Altitudes()
     s.altitudes.set_target_custom_altitude(0.059)
     s.altitudes.set_sensor_satellite_level()
 
-    # 校正波段（根据波段名称）
+    # 鏍℃娉㈡锛堟牴鎹尝娈靛悕绉帮級
     s.wavelength = Wavelength(0.450,0.520,[0.26665045403732035, 0.3898905990356667, 0.4365734433632099, 0.46350262095778305, 0.49204568689798206, 0.5176199163843476, 0.540561115963024, 0.5682131273380822, 0.6002756993408136, 0.6221870897658232, 0.6305517292683029, 0.6391171618716124, 0.6629074375761411, 0.6941437481584642, 0.7198332777418507, 0.7410571188969691, 0.7656783699869292, 0.7967537861568459, 0.8253006271461241, 0.8405207257502543, 0.8417219636907287, 0.8447305755272894, 0.8699114324074595, 0.9136765723097032, 0.9508133004267264, 0.9819957569853817, 0.9946839532212262, 0.8918374093071325, 0.5940393710297492])
                         
     print(s.wavelength)
@@ -54,7 +51,7 @@ def testpy6s():
 
     print(s.atmos_corr)
 
-    # 运行6s大气模型
+    # 杩愯6s澶ф皵妯″瀷
     s.run()
     xa = s.outputs.coef_xa
     xb = s.outputs.coef_xb
@@ -65,17 +62,16 @@ def testpy6s():
     return (xa, xb, xc)
 
 def testL8py6s():
-    # 6S模型
+    # 6S妯″瀷
     s = SixS()
 
-    # 传感器类型 自定义
-    s.geometry = Geometry.User()
+    # 浼犳劅鍣ㄧ被鍨?鑷畾涔?    s.geometry = Geometry.User()
     s.geometry.solar_z = 46
     s.geometry.solar_a = 155
     s.geometry.view_z = 0
     s.geometry.view_a = 0
 
-    # 日期
+    # 鏃ユ湡
     s.geometry.month = 11
     s.geometry.day = 1
 
@@ -84,21 +80,19 @@ def testL8py6s():
     s.atmos_profile = AtmosProfile.PredefinedType(AtmosProfile.MidlatitudeWinter)
 
     #print(s.atmos_profile)
-    # 气溶胶类型大陆
-    s.aero_profile = AtmosProfile.PredefinedType(AeroProfile.Continental)
+    # 姘旀憾鑳剁被鍨嬪ぇ闄?    s.aero_profile = AtmosProfile.PredefinedType(AeroProfile.Continental)
 
-    # 下垫面类型
-    s.ground_reflectance = GroundReflectance.HomogeneousLambertian(0.36)
+    # 涓嬪灚闈㈢被鍨?    s.ground_reflectance = GroundReflectance.HomogeneousLambertian(0.36)
 
-    # 550nm气溶胶光学厚度,对应能见度为40km
+    # 550nm姘旀憾鑳跺厜瀛﹀帤搴?瀵瑰簲鑳借搴︿负40km
     s.aot550 = 0.14497
 
-    # 研究区海拔、卫星传感器轨道高度
+    # 鐮旂┒鍖烘捣鎷斻€佸崼鏄熶紶鎰熷櫒杞ㄩ亾楂樺害
     s.altitudes = Altitudes()
     s.altitudes.set_target_custom_altitude(0.112)
     s.altitudes.set_sensor_satellite_level()
 
-    # 校正波段（根据波段名称）
+    # 鏍℃娉㈡锛堟牴鎹尝娈靛悕绉帮級
     s.wavelength = Wavelength(0.436, 0.526,
                       [1.00000000e-05, 1.79000000e-04, 4.55000000e-04,
                                 1.63350000e-03, 6.86900000e-03, 4.28880000e-02,
@@ -124,7 +118,7 @@ def testL8py6s():
 
     print(s.atmos_corr)
 
-    # 运行6s大气模型
+    # 杩愯6s澶ф皵妯″瀷
     s.run()
     xa = s.outputs.coef_xa
     xb = s.outputs.coef_xb
@@ -137,4 +131,5 @@ def testL8py6s():
 if __name__ == '__main__':
     # testpy6s()
     testL8py6s()
+
 

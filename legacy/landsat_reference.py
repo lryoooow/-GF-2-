@@ -1,7 +1,7 @@
-#! usr/bin/env python
+﻿#! usr/bin/env python
 # -*- coding:utf-8 -*-
 # created by zhaoguanhua 2017/9/25
-# AtmosphericCorrection for Landsat8
+# SurfaceReflectance for Landsat8
 
 import glob
 import os
@@ -15,21 +15,19 @@ from osgeo import gdal
 import pdb
 import shutil
 
-# 解压缩原始文件
-def untar(fname, dirs):
+# 瑙ｅ帇缂╁師濮嬫枃浠?def untar(fname, dirs):
     try:
         t = tarfile.open(fname)
     except Exception as e:
-        print("文件%s打开失败" % fname)
+        print("鏂囦欢%s鎵撳紑澶辫触" % fname)
     t.extractall(path=dirs)
 
-# 逐波段辐射定标
-def RadiometricCalibration(BandId):
-    # LandSat8 TM辐射定标参数
+# 閫愭尝娈佃緪灏勫畾鏍?def RadiometricCalibration(BandId):
+    # LandSat8 TM杈愬皠瀹氭爣鍙傛暟
     global data2,ImgRasterData
     parameter_OLI = numpy.zeros((11,2))
 
-    #计算辐射亮度参数
+    #璁＄畻杈愬皠浜害鍙傛暟
     # parameter_OLI[0,0] = float(''.join(re.findall('RADIANCE_MULT_BAND_1.+',data2)).split("=")[1])
     parameter_OLI[1,0] = float(''.join(re.findall('RADIANCE_MULT_BAND_2.+',data2)).split("=")[1])
     parameter_OLI[2,0] = float(''.join(re.findall('RADIANCE_MULT_BAND_3.+',data2)).split("=")[1])
@@ -65,14 +63,12 @@ def RadiometricCalibration(BandId):
     RaCal = numpy.where(ImgRasterData>0 ,Gain * ImgRasterData + Bias,-9999)
     return (RaCal)
 
-#计算表观反射率
-def TOAReflectance(BandId):
-    # LandSat8 TM辐射定标参数
+#璁＄畻琛ㄨ鍙嶅皠鐜?def TOAReflectance(BandId):
+    # LandSat8 TM杈愬皠瀹氭爣鍙傛暟
     global data2,ImgRasterData
     parameter_OLI = numpy.zeros((9,2))
 
-    #计算表观反射率参数
-    parameter_OLI[0,0] = float(''.join(re.findall('REFLECTANCE_MULT_BAND_1.+',data2)).split("=")[1])
+    #璁＄畻琛ㄨ鍙嶅皠鐜囧弬鏁?    parameter_OLI[0,0] = float(''.join(re.findall('REFLECTANCE_MULT_BAND_1.+',data2)).split("=")[1])
     parameter_OLI[1,0] = float(''.join(re.findall('REFLECTANCE_MULT_BAND_2.+',data2)).split("=")[1])
     parameter_OLI[2,0] = float(''.join(re.findall('REFLECTANCE_MULT_BAND_3.+',data2)).split("=")[1])
     parameter_OLI[3,0] = float(''.join(re.findall('REFLECTANCE_MULT_BAND_4.+',data2)).split("=")[1])
@@ -103,10 +99,10 @@ def TOAReflectance(BandId):
 
     return (TOARef)
 
-# 6s大气校正
-def AtmosphericCorrection(BandId):
+# 6s澶ф皵鏍℃
+def SurfaceReflectance(BandId):
     global data
-    # 6S模型
+    # 6S妯″瀷
     s = SixS()
 
     s.geometry = Geometry.User()
@@ -116,15 +112,14 @@ def AtmosphericCorrection(BandId):
     s.geometry.view_a = 0
 
 
-    # 日期
+    # 鏃ユ湡
     Dateparm = ''.join(re.findall('DATE_ACQUIRED.+',data2)).split("=")
     Date = Dateparm[1].split('-')
 
     s.geometry.month = int(Date[1])
     s.geometry.day = int(Date[2])
 
-    # 中心经纬度
-    point1lat = float(''.join(re.findall('CORNER_UL_LAT_PRODUCT.+',data2)).split("=")[1])
+    # 涓績缁忕含搴?    point1lat = float(''.join(re.findall('CORNER_UL_LAT_PRODUCT.+',data2)).split("=")[1])
     point1lon = float(''.join(re.findall('CORNER_UL_LON_PRODUCT.+',data2)).split("=")[1])
     point2lat = float(''.join(re.findall('CORNER_UR_LAT_PRODUCT.+',data2)).split("=")[1])
     point2lon = float(''.join(re.findall('CORNER_UR_LON_PRODUCT.+',data2)).split("=")[1])
@@ -136,7 +131,7 @@ def AtmosphericCorrection(BandId):
     sLongitude = (point1lon + point2lon + point3lon + point4lon) / 4
     sLatitude = (point1lat + point2lat + point3lat + point4lat) / 4
 
-    # 大气模式类型
+    # 澶ф皵妯″紡绫诲瀷
     if sLatitude > -15 and sLatitude <= 15:
         s.atmos_profile = AtmosProfile.PredefinedType(AtmosProfile.Tropical)
 
@@ -152,18 +147,15 @@ def AtmosphericCorrection(BandId):
         else:
             s.atmos_profile = AtmosProfile.PredefinedType(AtmosProfile.SubarcticWinter)
 
-    # 气溶胶类型大陆
-    s.aero_profile = AtmosProfile.PredefinedType(AeroProfile.Continental)
+    # 姘旀憾鑳剁被鍨嬪ぇ闄?    s.aero_profile = AtmosProfile.PredefinedType(AeroProfile.Continental)
 
-    # 目标地物？？？？？？
+    # 鐩爣鍦扮墿锛燂紵锛燂紵锛燂紵
     s.ground_reflectance = GroundReflectance.HomogeneousLambertian(0.36)
 
-    # 550nm气溶胶光学厚度,根据日期从MODIS处获取。
-    #s.visibility=40.0
+    # 550nm姘旀憾鑳跺厜瀛﹀帤搴?鏍规嵁鏃ユ湡浠嶮ODIS澶勮幏鍙栥€?    #s.visibility=40.0
     s.aot550 = 0.14497
 
-    # 通过研究去区的范围去求DEM高度。
-    pointUL = dict()
+    # 閫氳繃鐮旂┒鍘诲尯鐨勮寖鍥村幓姹侱EM楂樺害銆?    pointUL = dict()
     pointDR = dict()
     pointUL["lat"] = point1lat
     pointUL["lon"] = point1lon
@@ -171,12 +163,12 @@ def AtmosphericCorrection(BandId):
     pointDR["lon"] = point2lon
     meanDEM = (MeanDEM(pointUL, pointDR)) * 0.001
 
-    # 研究区海拔、卫星传感器轨道高度
+    # 鐮旂┒鍖烘捣鎷斻€佸崼鏄熶紶鎰熷櫒杞ㄩ亾楂樺害
     s.altitudes = Altitudes()
     s.altitudes.set_target_custom_altitude(meanDEM)
     s.altitudes.set_sensor_satellite_level()
 
-    # 校正波段（根据波段名称）
+    # 鏍℃娉㈡锛堟牴鎹尝娈靛悕绉帮級
     if BandId == 'B1.TIF':
         s.wavelength = Wavelength(PredefinedWavelengths.LANDSAT_OLI_B1)
 
@@ -204,10 +196,10 @@ def AtmosphericCorrection(BandId):
     elif BandId == 'B9.TIF':
         s.wavelength = Wavelength(PredefinedWavelengths.LANDSAT_OLI_B9)
 
-    # 下垫面非均一、朗伯体
+    # 涓嬪灚闈㈤潪鍧囦竴銆佹湕浼綋
     s.atmos_corr = AtmosCorr.AtmosCorrLambertianFromReflectance(-0.1)
 
-    # 运行6s大气模型
+    # 杩愯6s澶ф皵妯″瀷
     s.run()
 
     xa = s.outputs.coef_xa
@@ -218,7 +210,7 @@ def AtmosphericCorrection(BandId):
     return (xa, xb, xc)
 
 def MeanDEM(pointUL, pointDR):
-    # 打开DEM数据
+    # 鎵撳紑DEM鏁版嵁
     try:
         DEMIDataSet = gdal.Open("GMTED2km.tif")
     except Exception as e:
@@ -229,29 +221,24 @@ def MeanDEM(pointUL, pointDR):
     rows = DEMIDataSet.RasterYSize
 
     geotransform = DEMIDataSet.GetGeoTransform()
-    # DEM分辨率
-    pixelWidth = geotransform[1]
+    # DEM鍒嗚鲸鐜?    pixelWidth = geotransform[1]
     pixelHight = geotransform[5]
 
-    # DEM起始点：左上角，X：经度，Y：纬度
-    originX = geotransform[0]
+    # DEM璧峰鐐癸細宸︿笂瑙掞紝X锛氱粡搴︼紝Y锛氱含搴?    originX = geotransform[0]
     originY = geotransform[3]
 
-    # 研究区左上角在矩阵中的位置
-    yoffset1 = int((originY - pointUL['lat']) / pixelWidth)
+    # 鐮旂┒鍖哄乏涓婅鍦ㄧ煩闃典腑鐨勪綅缃?    yoffset1 = int((originY - pointUL['lat']) / pixelWidth)
     xoffset1 = int((pointUL['lon'] - originX) / (-pixelHight))
 
-    # 研究区右下角在矩阵中的位置
-    yoffset2 = int((originY - pointDR['lat']) / pixelWidth)
+    # 鐮旂┒鍖哄彸涓嬭鍦ㄧ煩闃典腑鐨勪綅缃?    yoffset2 = int((originY - pointDR['lat']) / pixelWidth)
     xoffset2 = int((pointDR['lon'] - originX) / (-pixelHight))
 
-    # 研究区矩阵行列数
+    # 鐮旂┒鍖虹煩闃佃鍒楁暟
     xx = xoffset2 - xoffset1
     yy = yoffset2 - yoffset1
 
 
-    # 读取研究区内的数据，并计算高程
-    DEMRasterData = DEMBand.ReadAsArray(xoffset1, yoffset1, xx, yy)
+    # 璇诲彇鐮旂┒鍖哄唴鐨勬暟鎹紝骞惰绠楅珮绋?    DEMRasterData = DEMBand.ReadAsArray(xoffset1, yoffset1, xx, yy)
 
     MeanAltitude = numpy.mean(DEMRasterData)
     return MeanAltitude
@@ -260,27 +247,27 @@ def CloudMaskScore():
 
     mask = BrightTemp == -9999
 
-    #得分1：Blue
+    #寰楀垎1锛欱lue
     BluePart = numpy.ma.array((TOARefRasterBlue-0.1)/0.2,mask=mask)
     BluePart.fill_value=-9999
     ScorePart1 = numpy.where(BluePart.filled()>1,1,BluePart.filled())
 
-    #得分2：Red、Blue、Green
+    #寰楀垎2锛歊ed銆丅lue銆丟reen
     RGBPart = numpy.ma.array((TOARefRasterBlue+TOARefRasterGreen+TOARefRasterRed-0.2)/0.6,mask=mask)
     RGBPart.fill_value=-9999
     ScorePart2 = numpy.where(RGBPart.filled()>ScorePart1,ScorePart1,RGBPart.filled())
 
-    #得分3：Nir、Swir1、Swir2
+    #寰楀垎3锛歂ir銆丼wir1銆丼wir2
     NSSPart = numpy.ma.array((TOARefRasterNir+TOARefRasterSwir1+TOARefRasterSwir2-0.3)/0.5,mask=mask)
     NSSPart.fill_value=-9999
     ScorePart3 = numpy.where(NSSPart.filled()>ScorePart2,ScorePart2,NSSPart.filled())
 
-    #得分4:temperature
+    #寰楀垎4:temperature
     TempPart = numpy.ma.array((BrightTemp-300)/(-10),mask=mask)
     TempPart.fill_value=-9999
     ScorePart4 = numpy.where(TempPart.filled()>ScorePart3,ScorePart3,TempPart.filled())
 
-    #得分5NDSI：Green、TOARefRasterSwir1
+    #寰楀垎5NDSI锛欸reen銆乀OARefRasterSwir1
     NDSIPart1 = numpy.ma.array((TOARefRasterGreen- TOARefRasterSwir1)/(TOARefRasterGreen+TOARefRasterSwir1),mask=mask)
     NDSIPart2 = numpy.ma.array((NDSIPart1-0.8)/(-0.2),mask=mask)
     NDSIPart2.fill_value=-9999
@@ -291,19 +278,19 @@ def CloudMaskScore():
 
 if __name__ == '__main__':
 
-    #输入数据路径
+    #杈撳叆鏁版嵁璺緞
     RootOutName = sys.argv[2]
     RootInputPath = sys.argv[1]
 
     Contronal=0
-    #创建日志文件
+    #鍒涘缓鏃ュ織鏂囦欢
     LogFile = open(os.path.join(RootOutName,'log.text'),'w')
 
     for root,dirs,RSFiles in os.walk(RootInputPath):
 
-        #判断是否进入最底层
+        #鍒ゆ柇鏄惁杩涘叆鏈€搴曞眰
         if len(dirs)==0:
-            #根据输入输出路径建立生成新文件的路径
+            #鏍规嵁杈撳叆杈撳嚭璺緞寤虹珛鐢熸垚鏂版枃浠剁殑璺緞
             RootInputPathList = RootInputPath.split('/')
             RootList = root.split('/')
             StartList = len(RootInputPathList)
@@ -316,11 +303,10 @@ if __name__ == '__main__':
                 else:
                     outname=os.path.join(outname,RootList[i])
 
-            #判断文件是否都存在
-            CloudScoreFile = os.path.join(outname,RootList[-1]+'_CloudScore.TIF')
+            #鍒ゆ柇鏂囦欢鏄惁閮藉瓨鍦?            CloudScoreFile = os.path.join(outname,RootList[-1]+'_CloudScore.TIF')
 
             if os.path.isfile(CloudScoreFile):
-                print(root+'计算完成')
+                print(root+'璁＄畻瀹屾垚')
                 continue
             else:
                 MeteData = os.path.join(root,'MTL.txt')
@@ -336,25 +322,24 @@ if __name__ == '__main__':
                         BandId = (os.path.basename(tifFile))
                         # print(BandId)
 
-                        #捕捉打开数据出错异常
+                        #鎹曟崏鎵撳紑鏁版嵁鍑洪敊寮傚父
                         try:
                             IDataSet = gdal.Open(os.path.join(root,tifFile))
                         except Exception as e:
-                            print("文件%S打开失败" % tifFile)
-                            LogFile.write('\n'+os.path.join(root,tifFile)+'数据打开失败')
+                            print("鏂囦欢%S鎵撳紑澶辫触" % tifFile)
+                            LogFile.write('\n'+os.path.join(root,tifFile)+'鏁版嵁鎵撳紑澶辫触')
                         
                         if IDataSet == None:
-                            LogFile.write('\n'+os.path.join(root,tifFile)+'数据集读取为空')
+                            LogFile.write('\n'+os.path.join(root,tifFile)+'鏁版嵁闆嗚鍙栦负绌?)
                             continue
                         else:
-                            #获取行列号
-                            cols = IDataSet.RasterXSize
+                            #鑾峰彇琛屽垪鍙?                            cols = IDataSet.RasterXSize
                             rows = IDataSet.RasterYSize
                             ImgBand = IDataSet.GetRasterBand(1)
                             ImgRasterData = ImgBand.ReadAsArray(0, 0, cols, rows)
 
                             if ImgRasterData is None:
-                                LogFile.write('\n'+os.path.join(root,tifFile)+'栅格数据为空')
+                                LogFile.write('\n'+os.path.join(root,tifFile)+'鏍呮牸鏁版嵁涓虹┖')
                                 continue
                             else:
                                 if BandId =='B02.tiff':
@@ -383,30 +368,28 @@ if __name__ == '__main__':
                                 #     RaCalRaster = RadiometricCalibration(BandId)
                                 #     Contronal = Contronal + 1
                                 #     BrightTemp = numpy.where(RaCalRaster!=-9999,1321.08/numpy.log(774.89/RaCalRaster+1),-9999)
-                                    # print("亮温计算完成")
+                                    # print("浜俯璁＄畻瀹屾垚")
 
                                 if BandId == 'B02.tiff'or BandId == 'B03.tiff'or BandId == 'B04.tiff'or BandId == 'B05.tiff':
-                                    #设置输出文件路径
+                                    #璁剧疆杈撳嚭鏂囦欢璺緞
                                     outFilename=os.path.join(outname,os.path.basename(tifFile))
 
-                                    #如果文件存在就跳过，进行下一波段操作
+                                    #濡傛灉鏂囦欢瀛樺湪灏辫烦杩囷紝杩涜涓嬩竴娉㈡鎿嶄綔
                                     if os.path.isfile(outFilename):
-                                        print("%s已经完成" % outFilename)
+                                        print("%s宸茬粡瀹屾垚" % outFilename)
                                         continue
                                     else:
-                                        # #辐射校正
+                                        # #杈愬皠鏍℃
                                         # RaCalRaster = RadiometricCalibration(tifFile, BandId)
-                                        #大气校正
-                                        a, b, c = AtmosphericCorrection(BandId)
+                                        #澶ф皵鏍℃
+                                        a, b, c = SurfaceReflectance(BandId)
                                         y = numpy.where(RaCalRaster!=-9999,a * RaCalRaster - b,-9999)
                                         atc = numpy.where(y!=-9999,(y / (1 + y * c))*10000,-9999)
                                         
                                         driver = IDataSet.GetDriver()
-                                        #输出栅格数据集
-                                        outDataset = driver.Create(outFilename, cols, rows, 1, gdal.GDT_Int16)
+                                        #杈撳嚭鏍呮牸鏁版嵁闆?                                        outDataset = driver.Create(outFilename, cols, rows, 1, gdal.GDT_Int16)
 
-                                        # 设置投影信息，与原数据一样
-                                        geoTransform = IDataSet.GetGeoTransform()
+                                        # 璁剧疆鎶曞奖淇℃伅锛屼笌鍘熸暟鎹竴鏍?                                        geoTransform = IDataSet.GetGeoTransform()
                                         outDataset.SetGeoTransform(geoTransform)
                                         proj = IDataSet.GetProjection()
                                         outDataset.SetProjection(proj)
@@ -414,21 +397,19 @@ if __name__ == '__main__':
                                         outband = outDataset.GetRasterBand(1)
                                         outband.SetNoDataValue(-9999)
                                         outband.WriteArray(atc, 0, 0)
-                print(root+'计算完成')
+                print(root+'璁＄畻瀹屾垚')
 
                 # if Contronal == 7:
                 #     print(Contronal)
-                #     #设置输出文件路径
+                #     #璁剧疆杈撳嚭鏂囦欢璺緞
                 #     outFilename=os.path.join(outname,os.path.basename(tifFile)[0:41]+'CloudScore.TIF')
                 #     CloudScoreFile = os.path.join(outname,RootList[-1]+'_CloudScore.TIF')
 
                 #     CloudScoreData = CloudMaskScore()
                 #     driver = IDataSet.GetDriver()
-                #     #输出栅格数据集
-                #     CloudDataset = driver.Create(CloudScoreFile, cols, rows, 1, gdal.GDT_Float32)
+                #     #杈撳嚭鏍呮牸鏁版嵁闆?                #     CloudDataset = driver.Create(CloudScoreFile, cols, rows, 1, gdal.GDT_Float32)
 
-                #     # 设置投影信息，与原数据一样
-                #     geoTransform = IDataSet.GetGeoTransform()
+                #     # 璁剧疆鎶曞奖淇℃伅锛屼笌鍘熸暟鎹竴鏍?                #     geoTransform = IDataSet.GetGeoTransform()
                 #     proj = IDataSet.GetProjection()
                 #     CloudDataset.SetGeoTransform(geoTransform)
                 #     CloudDataset.SetProjection(proj)
@@ -436,13 +417,14 @@ if __name__ == '__main__':
                 #     outband = CloudDataset.GetRasterBand(1)
                 #     outband.SetNoDataValue(-9999)
                 #     outband.WriteArray(CloudScoreData, 0, 0)
-                #     print('影像'+outFilename + '处理完成')
+                #     print('褰卞儚'+outFilename + '澶勭悊瀹屾垚')
                 #     RasterData = None
                 #     Contronal=0
                 # else:
                 #     Contronal=0
 
-    #关闭日志文件
+    #鍏抽棴鏃ュ織鏂囦欢
     LogFile.close()
+
 
 

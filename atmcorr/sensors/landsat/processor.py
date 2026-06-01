@@ -9,6 +9,5 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--output-dir", required=True)
     parser.parse_args(argv)
     raise NotImplementedError(
-        "Landsat processing has been moved into the sensor module skeleton. "
-        "Use legacy/AtmosphericCorrection_Landsat8.py until this module is upgraded."
+        "Landsat processing is not yet available in this module."
     )

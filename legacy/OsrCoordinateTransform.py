@@ -1,4 +1,4 @@
-#! usr/bin/env python
+﻿#! usr/bin/env python
 # -*- coding:utf-8 -*-
 # created by zhaoguanhua 2017/10/23
 
@@ -8,9 +8,9 @@ import numpy as np
 
 def getSRSPair(dataset):
     '''
-    获得给定数据的投影参考系和地理参考系
-    :param dataset: GDAL地理数据
-    :return: 投影参考系和地理参考系
+    鑾峰緱缁欏畾鏁版嵁鐨勬姇褰卞弬鑰冪郴鍜屽湴鐞嗗弬鑰冪郴
+    :param dataset: GDAL鍦扮悊鏁版嵁
+    :return: 鎶曞奖鍙傝€冪郴鍜屽湴鐞嗗弬鑰冪郴
     '''
     prosrs = osr.SpatialReference()
 
@@ -20,11 +20,10 @@ def getSRSPair(dataset):
 
 def geo2lonlat(dataset, x, y):
     '''
-    将投影坐标转为经纬度坐标（具体的投影坐标系由给定数据确定）
-    :param dataset: GDAL地理数据
-    :param x: 投影坐标x
-    :param y: 投影坐标y
-    :return: 投影坐标(x, y)对应的经纬度坐标(lon, lat)
+    灏嗘姇褰卞潗鏍囪浆涓虹粡绾害鍧愭爣锛堝叿浣撶殑鎶曞奖鍧愭爣绯荤敱缁欏畾鏁版嵁纭畾锛?    :param dataset: GDAL鍦扮悊鏁版嵁
+    :param x: 鎶曞奖鍧愭爣x
+    :param y: 鎶曞奖鍧愭爣y
+    :return: 鎶曞奖鍧愭爣(x, y)瀵瑰簲鐨勭粡绾害鍧愭爣(lon, lat)
     '''
     prosrs, geosrs = getSRSPair(dataset)
     ct = osr.CoordinateTransformation(prosrs, geosrs)
@@ -33,12 +32,10 @@ def geo2lonlat(dataset, x, y):
 
 def lonlat2geo(dataset, lon, lat):
     '''
-    将经纬度坐标转为投影坐标（具体的投影坐标系由给定数据确定）
-    :param dataset: GDAL地理数据
-    :param lon: 地理坐标lon经度
-    :param lat: 地理坐标lat纬度
-    :return: 经纬度坐标(lon, lat)对应的投影坐标
-    '''
+    灏嗙粡绾害鍧愭爣杞负鎶曞奖鍧愭爣锛堝叿浣撶殑鎶曞奖鍧愭爣绯荤敱缁欏畾鏁版嵁纭畾锛?    :param dataset: GDAL鍦扮悊鏁版嵁
+    :param lon: 鍦扮悊鍧愭爣lon缁忓害
+    :param lat: 鍦扮悊鍧愭爣lat绾害
+    :return: 缁忕含搴﹀潗鏍?lon, lat)瀵瑰簲鐨勬姇褰卞潗鏍?    '''
     prosrs, geosrs = getSRSPair(dataset)
     ct = osr.CoordinateTransformation(geosrs, prosrs)
     coords = ct.TransformPoint(lon, lat)
@@ -46,11 +43,9 @@ def lonlat2geo(dataset, lon, lat):
 
 def imagexy2geo(dataset, row, col):
     '''
-    根据GDAL的六参数模型将影像图上坐标（行列号）转为投影坐标或地理坐标（根据具体数据的坐标系统转换）
-    :param dataset: GDAL地理数据
-    :param row: 像素的行号
-    :param col: 像素的列号
-    :return: 行列号(row, col)对应的投影坐标或地理坐标(x, y)
+    鏍规嵁GDAL鐨勫叚鍙傛暟妯″瀷灏嗗奖鍍忓浘涓婂潗鏍囷紙琛屽垪鍙凤級杞负鎶曞奖鍧愭爣鎴栧湴鐞嗗潗鏍囷紙鏍规嵁鍏蜂綋鏁版嵁鐨勫潗鏍囩郴缁熻浆鎹級
+    :param dataset: GDAL鍦扮悊鏁版嵁
+    :param row: 鍍忕礌鐨勮鍙?    :param col: 鍍忕礌鐨勫垪鍙?    :return: 琛屽垪鍙?row, col)瀵瑰簲鐨勬姇褰卞潗鏍囨垨鍦扮悊鍧愭爣(x, y)
     '''
     trans = dataset.GetGeoTransform()
     px = trans[0] + row * trans[1] + col * trans[2]
@@ -59,23 +54,23 @@ def imagexy2geo(dataset, row, col):
 
 def geo2imagexy(dataset, x, y):
     '''
-    根据GDAL的六 参数模型将给定的投影或地理坐标转为影像图上坐标（行列号）
-    :param dataset: GDAL地理数据
-    :param x: 投影或地理坐标x
-    :param y: 投影或地理坐标y
-    :return: 影坐标或地理坐标(x, y)对应的影像图上行列号(row, col)
+    鏍规嵁GDAL鐨勫叚 鍙傛暟妯″瀷灏嗙粰瀹氱殑鎶曞奖鎴栧湴鐞嗗潗鏍囪浆涓哄奖鍍忓浘涓婂潗鏍囷紙琛屽垪鍙凤級
+    :param dataset: GDAL鍦扮悊鏁版嵁
+    :param x: 鎶曞奖鎴栧湴鐞嗗潗鏍噚
+    :param y: 鎶曞奖鎴栧湴鐞嗗潗鏍噛
+    :return: 褰卞潗鏍囨垨鍦扮悊鍧愭爣(x, y)瀵瑰簲鐨勫奖鍍忓浘涓婅鍒楀彿(row, col)
     '''
     trans = dataset.GetGeoTransform()
     a = np.array([[trans[1], trans[2]], [trans[4], trans[5]]])
     b = np.array([x - trans[0], y - trans[3]])
-    return np.linalg.solve(a, b)  # 使用numpy的linalg.solve进行二元一次方程的求解
+    return np.linalg.solve(a, b)  # 浣跨敤numpy鐨刲inalg.solve杩涜浜屽厓涓€娆℃柟绋嬬殑姹傝В
 
 if __name__ == '__main__':
     gdal.AllRegister()
-    dataset = gdal.Open('/Users/zhaoguanhua/2017/Project/Data/AtmosphericCorrection/sentinel/15SUC/tiles/15/S/UC/2017/1/7/0/B02.tiff')
-    print('数据投影：')
+    dataset = gdal.Open('/Users/zhaoguanhua/2017/Project/Data/SurfaceReflectance/sentinel/15SUC/tiles/15/S/UC/2017/1/7/0/B02.tiff')
+    print('鏁版嵁鎶曞奖锛?)
     print(dataset.GetProjection())
-    print('数据的大小（行，列）：')
+    print('鏁版嵁鐨勫ぇ灏忥紙琛岋紝鍒楋級锛?)
     print('(%s %s)' % (dataset.RasterYSize, dataset.RasterXSize))
 
     x = 300000
@@ -85,19 +80,20 @@ if __name__ == '__main__':
     row = 2399
     col = 3751
 
-    print('投影坐标 -> 经纬度：')
+    print('鎶曞奖鍧愭爣 -> 缁忕含搴︼細')
     coords = geo2lonlat(dataset, x, y)
     print('(%s, %s)->(%s, %s)' % (x, y, coords[0], coords[1]))
-    print('经纬度 -> 投影坐标：')
+    print('缁忕含搴?-> 鎶曞奖鍧愭爣锛?)
     coords = lonlat2geo(dataset, lon, lat)
     print('(%s, %s)->(%s, %s)' % (lon, lat, coords[0], coords[1]))
 
-    print('图上坐标 -> 投影坐标：')
+    print('鍥句笂鍧愭爣 -> 鎶曞奖鍧愭爣锛?)
     coords = imagexy2geo(dataset, row, col)
     print('(%s, %s)->(%s, %s)' % (row, col, coords[0], coords[1]))
-    print('投影坐标 -> 图上坐标：')
+    print('鎶曞奖鍧愭爣 -> 鍥句笂鍧愭爣锛?)
     coords = geo2imagexy(dataset, x, y)
     print('(%s, %s)->(%s, %s)' % (x, y, coords[0], coords[1]))
+
 
 
 

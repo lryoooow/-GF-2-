@@ -1,7 +1,7 @@
-#! usr/bin/env python
+﻿#! usr/bin/env python
 # -*- coding:utf-8 -*-
 # created by zhaoguanhua 2017/10/9
-# AtmosphericCorrection for Sentinel-2A
+# SurfaceReflectance for Sentinel-2A
 
 import glob
 import os
@@ -18,11 +18,9 @@ import shutil
 
 def TOAReflectanceToTOARadiance(BandId):
     '''
-    将表观反射率转换为表观辐射亮度
-    '''
+    灏嗚〃瑙傚弽灏勭巼杞崲涓鸿〃瑙傝緪灏勪寒搴?    '''
     global dom
-    #太阳辐照度
-    EsBand = numpy.zeros((14))
+    #澶槼杈愮収搴?    EsBand = numpy.zeros((14))
     EsBand[1] = 1913.57
     EsBand[2] = 1941.63
     EsBand[3] = 1822.61
@@ -37,23 +35,22 @@ def TOAReflectanceToTOARadiance(BandId):
     EsBand[12]= 245.59
     EsBand[13]= 85.25
 
-    #日地相对距离，在1左右波动，暂时用1代替
-    #公式：D=1+0.0167*sin(2*pi*(days-39.5)/360)  days是儒略日
+    #鏃ュ湴鐩稿璺濈锛屽湪1宸﹀彸娉㈠姩锛屾殏鏃剁敤1浠ｆ浛
+    #鍏紡锛欴=1+0.0167*sin(2*pi*(days-39.5)/360)  days鏄剴鐣ユ棩
     D = 1
-    #太阳天顶角
-    SunZenith = float(dom.getElementsByTagName('ZENITH_ANGLE')[0].firstChild.data)
+    #澶槼澶╅《瑙?    SunZenith = float(dom.getElementsByTagName('ZENITH_ANGLE')[0].firstChild.data)
     Us = numpy.cos(SunZenith/180*numpy.pi)
 
     Radiance =numpy.where(ImgRasterData!=0,(ImgRasterData/10000)*Us*EsBand[BandId]/(D*D*numpy.pi),-9999)
     return Radiance
 
-# 6s大气校正
-def AtmosphericCorrection(BandId):
+# 6s澶ф皵鏍℃
+def SurfaceReflectance(BandId):
     '''
-    调用6s模型，给各参数赋值，得到大气校正参数
+    璋冪敤6s妯″瀷锛岀粰鍚勫弬鏁拌祴鍊硷紝寰楀埌澶ф皵鏍℃鍙傛暟
     '''
     global dom,SixsInputParameter
-    # 6S模型
+    # 6S妯″瀷
     s = SixS()
 
     s.geometry = Geometry.User()
@@ -62,29 +59,27 @@ def AtmosphericCorrection(BandId):
     s.geometry.view_z = SixsInputParameter["ViewZenithAngle"][BandId]
     s.geometry.view_a = SixsInputParameter["ViewAzimuthAngle"][BandId]
 
-    # 日期:月、日
+    # 鏃ユ湡:鏈堛€佹棩
     s.geometry.month = SixsInputParameter["ImgMonth"]
     s.geometry.day = SixsInputParameter["ImgDay"]
 
-    #大气模式类型
+    #澶ф皵妯″紡绫诲瀷
     s.atmos_profile = AtmosProfile.PredefinedType(SixsInputParameter["AtmosphericProfile"])
 
-    # 气溶胶类型大陆
-    s.aero_profile = AtmosProfile.PredefinedType(AeroProfile.Continental)
+    # 姘旀憾鑳剁被鍨嬪ぇ闄?    s.aero_profile = AtmosProfile.PredefinedType(AeroProfile.Continental)
 
-    # 目标地物
+    # 鐩爣鍦扮墿
     s.ground_reflectance = GroundReflectance.HomogeneousLambertian(0.36)
 
-    # 550nm气溶胶光学厚度,根据日期从MODIS处获取。
-    #s.visibility=40.0
+    # 550nm姘旀憾鑳跺厜瀛﹀帤搴?鏍规嵁鏃ユ湡浠嶮ODIS澶勮幏鍙栥€?    #s.visibility=40.0
     s.aot550 = 0.14497
 
-    # 研究区海拔、卫星传感器轨道高度
+    # 鐮旂┒鍖烘捣鎷斻€佸崼鏄熶紶鎰熷櫒杞ㄩ亾楂樺害
     s.altitudes = Altitudes()
     s.altitudes.set_target_custom_altitude(SixsInputParameter["meanDEM"])
     s.altitudes.set_sensor_satellite_level()
 
-    # 校正波段（根据波段名称）
+    # 鏍℃娉㈡锛堟牴鎹尝娈靛悕绉帮級
     if BandId == 1:
         s.wavelength = Wavelength(PredefinedWavelengths.S2A_MSI_01)
 
@@ -124,10 +119,10 @@ def AtmosphericCorrection(BandId):
     elif BandId == 13:
         s.wavelength = Wavelength(PredefinedWavelengths.S2A_MSI_13)
 
-    # 下垫面非均一、朗伯体
+    # 涓嬪灚闈㈤潪鍧囦竴銆佹湕浼綋
     s.atmos_corr = AtmosCorr.AtmosCorrLambertianFromReflectance(-0.1)
 
-    # 运行6s大气模型
+    # 杩愯6s澶ф皵妯″瀷
     s.run()
 
     xa = s.outputs.coef_xa
@@ -138,7 +133,7 @@ def AtmosphericCorrection(BandId):
 
 def MeanDEM(pointUL, pointDR):
     '''
-    计算影像所在区域的平均高程.
+    璁＄畻褰卞儚鎵€鍦ㄥ尯鍩熺殑骞冲潎楂樼▼.
     '''
     try:
         DEMIDataSet = gdal.Open("GMTED2km.tif")
@@ -147,44 +142,40 @@ def MeanDEM(pointUL, pointDR):
 
     DEMBand = DEMIDataSet.GetRasterBand(1)
     geotransform = DEMIDataSet.GetGeoTransform()
-    # DEM分辨率
-    pixelWidth = geotransform[1]
+    # DEM鍒嗚鲸鐜?    pixelWidth = geotransform[1]
     pixelHight = geotransform[5]
 
-    # DEM起始点：左上角，X：经度，Y：纬度
-    originX = geotransform[0]
+    # DEM璧峰鐐癸細宸︿笂瑙掞紝X锛氱粡搴︼紝Y锛氱含搴?    originX = geotransform[0]
     originY = geotransform[3]
 
-    # 研究区左上角在DEM矩阵中的位置
+    # 鐮旂┒鍖哄乏涓婅鍦―EM鐭╅樀涓殑浣嶇疆
     yoffset1 = int((originY - pointUL['lat']) / pixelWidth)
     xoffset1 = int((pointUL['lon'] - originX) / (-pixelHight))
 
-    # 研究区右下角在DEM矩阵中的位置
+    # 鐮旂┒鍖哄彸涓嬭鍦―EM鐭╅樀涓殑浣嶇疆
     yoffset2 = int((originY - pointDR['lat']) / pixelWidth)
     xoffset2 = int((pointDR['lon'] - originX) / (-pixelHight))
 
-    # 研究区矩阵行列数
+    # 鐮旂┒鍖虹煩闃佃鍒楁暟
     xx = xoffset2 - xoffset1
     yy = yoffset2 - yoffset1
 
-    # 读取研究区内的数据，并计算高程
-    DEMRasterData = DEMBand.ReadAsArray(xoffset1, yoffset1, xx, yy)
+    # 璇诲彇鐮旂┒鍖哄唴鐨勬暟鎹紝骞惰绠楅珮绋?    DEMRasterData = DEMBand.ReadAsArray(xoffset1, yoffset1, xx, yy)
 
     MeanAltitude = numpy.mean(DEMRasterData)
     return MeanAltitude
 
 def BasicParameters():
     '''
-    整理6s大气校正所需的参数
-    '''
+    鏁寸悊6s澶ф皵鏍℃鎵€闇€鐨勫弬鏁?    '''
     global dom
     SixsParameters = dict()
-    #太阳天顶角、方位角
+    #澶槼澶╅《瑙掋€佹柟浣嶈
     SunAngle = dom.getElementsByTagName('Mean_Sun_Angle')
     SixsParameters["SolarZenithAngle"] = float(SunAngle[0].getElementsByTagName('ZENITH_ANGLE')[0].firstChild.data)
     SixsParameters["SolarAzimuthAngle"] = float(SunAngle[0].getElementsByTagName('AZIMUTH_ANGLE')[0].firstChild.data)
 
-    #卫星天顶角、方位角
+    #鍗槦澶╅《瑙掋€佹柟浣嶈
     ViewAngles = dom.getElementsByTagName('Mean_Viewing_Incidence_Angle')
     ViewZeniths = dict()
     ViewAzimuths = dict()
@@ -196,12 +187,12 @@ def BasicParameters():
 
     SixsParameters["ViewZenithAngle"] = ViewZeniths
     SixsParameters["ViewAzimuthAngle"] = ViewAzimuths
-    # 日期:月、日
+    # 鏃ユ湡:鏈堛€佹棩
     Date = dom.getElementsByTagName('SENSING_TIME')[0].firstChild.data.split('T')[0]
     SixsParameters["ImgMonth"] = int(Date.split('-')[1])
     SixsParameters["ImgDay"] = int(Date.split('-')[2])
 
-    #求影像中心经纬度
+    #姹傚奖鍍忎腑蹇冪粡绾害
     PointULX = int(dom.getElementsByTagName('ULX')[0].firstChild.data)
     PointULY = int(dom.getElementsByTagName('ULY')[0].firstChild.data)
 
@@ -215,8 +206,7 @@ def BasicParameters():
     PointBRX = PointULX + 10*SixsParameters["Ncols"]
     PointBRY = PointULY - 10*SixsParameters["Nrows"]
 
-    # 将投影坐标转为经纬度坐标（具体的投影坐标系由给定数据确定）
-    Proj = dom.getElementsByTagName('HORIZONTAL_CS_CODE')[0].firstChild.data
+    # 灏嗘姇褰卞潗鏍囪浆涓虹粡绾害鍧愭爣锛堝叿浣撶殑鎶曞奖鍧愭爣绯荤敱缁欏畾鏁版嵁纭畾锛?    Proj = dom.getElementsByTagName('HORIZONTAL_CS_CODE')[0].firstChild.data
     ProjCode = int(Proj.split(':')[1])
 
     source = osr.SpatialReference()
@@ -234,7 +224,7 @@ def BasicParameters():
     sLongitude = (ULLon+BRLon) / 2
     sLatitude = (ULLat+ULLat) / 2
 
-    #大气模式类型
+    #澶ф皵妯″紡绫诲瀷
     if sLatitude > -15 and sLatitude <= 15:
         SixsParameters["AtmosphericProfile"] = 1                                    #Tropical
     elif sLatitude > 15 and sLatitude <= 45:
@@ -260,17 +250,17 @@ def BasicParameters():
 
 if __name__ == '__main__':
 
-    #输入数据路径
+    #杈撳叆鏁版嵁璺緞
     RootOutName = sys.argv[2]
     RootInputPath = sys.argv[1]
 
-    #创建日志文件
+    #鍒涘缓鏃ュ織鏂囦欢
     LogFile = open(os.path.join(RootOutName,'log.text'),'w')
 
     for root,dirs,RSFiles in os.walk(RootInputPath):
-        #判断是否进入最底层
+        #鍒ゆ柇鏄惁杩涘叆鏈€搴曞眰
         if len(dirs)==0:
-            #根据输入输出路径建立生成新文件的路径
+            #鏍规嵁杈撳叆杈撳嚭璺緞寤虹珛鐢熸垚鏂版枃浠剁殑璺緞
             RootInputPathList = RootInputPath.split('/')
             RootList = root.split('/')
             StartList = len(RootInputPathList)
@@ -284,14 +274,13 @@ if __name__ == '__main__':
                     outname=os.path.join(outname,RootList[i])
 
 
-            #获得影像头文件 
+            #鑾峰緱褰卞儚澶存枃浠?
             MeteData = os.path.join(root,'metadata.xml')
             shutil.copyfile(MeteData,os.path.join(outname,'metedata.xml'))
             dom = xml.dom.minidom.parse(MeteData)
             SixsInputParameter = BasicParameters()
 
-            #选出影像所有波段
-            RSbands = glob.glob(os.path.join(root,"B*.tiff"))
+            #閫夊嚭褰卞儚鎵€鏈夋尝娈?            RSbands = glob.glob(os.path.join(root,"B*.tiff"))
 
             for tifFile in RSbands:
                 print(tifFile)
@@ -302,47 +291,43 @@ if __name__ == '__main__':
                 else:
                     BandId = int(os.path.basename(tifFile)[1:3])+1
                 print(BandId)
-                #捕捉打开数据出错异常
+                #鎹曟崏鎵撳紑鏁版嵁鍑洪敊寮傚父
                 try:
                     IDataSet = gdal.Open(tifFile)
                 except Exception as e:
-                    print("文件%S打开失败" % tifFile)
-                    LogFile.write('\n'+tifFile+'数据打开失败')
+                    print("鏂囦欢%S鎵撳紑澶辫触" % tifFile)
+                    LogFile.write('\n'+tifFile+'鏁版嵁鎵撳紑澶辫触')
                 
                 if IDataSet == None:
-                    LogFile.write('\n'+tifFile+'数据集读取为空')
+                    LogFile.write('\n'+tifFile+'鏁版嵁闆嗚鍙栦负绌?)
                     continue
                 else:
-                    #获取行列号
-                    cols = IDataSet.RasterXSize
+                    #鑾峰彇琛屽垪鍙?                    cols = IDataSet.RasterXSize
                     rows = IDataSet.RasterYSize
                     ImgBand = IDataSet.GetRasterBand(1)
                     ImgRasterData = ImgBand.ReadAsArray(0, 0, cols, rows)
                     if ImgRasterData is None:
-                        LogFile.write('\n'+tifFile+'栅格数据为空')
+                        LogFile.write('\n'+tifFile+'鏍呮牸鏁版嵁涓虹┖')
                         continue
                     else:
-                        #设置输出文件路径
+                        #璁剧疆杈撳嚭鏂囦欢璺緞
                         outFilename=os.path.join(outname,os.path.basename(tifFile)[0:3]+'.tiff')
 
-                        #如果文件存在就跳过，进行下一波段操作
+                        #濡傛灉鏂囦欢瀛樺湪灏辫烦杩囷紝杩涜涓嬩竴娉㈡鎿嶄綔
                         if os.path.isfile(outFilename):
-                            print("%s已经完成" % outFilename)
+                            print("%s宸茬粡瀹屾垚" % outFilename)
                             continue
                         else:
-                            #表观反射率转换为辐射亮度值
-                            RaCalRaster = TOAReflectanceToTOARadiance(BandId)
-                            #大气校正
-                            a, b, c = AtmosphericCorrection(BandId)
+                            #琛ㄨ鍙嶅皠鐜囪浆鎹负杈愬皠浜害鍊?                            RaCalRaster = TOAReflectanceToTOARadiance(BandId)
+                            #澶ф皵鏍℃
+                            a, b, c = SurfaceReflectance(BandId)
                             y = numpy.where(RaCalRaster!=-9999,a * RaCalRaster - b,-9999)
                             atc = numpy.where(y!=-9999,(y / (1 + y * c))*10000,-9999)
                             
                             driver = gdal.GetDriverByName('GTIFF')
-                            #输出栅格数据集
-                            outDataset = driver.Create(outFilename, cols, rows, 1, gdal.GDT_Int16)
+                            #杈撳嚭鏍呮牸鏁版嵁闆?                            outDataset = driver.Create(outFilename, cols, rows, 1, gdal.GDT_Int16)
 
-                            # 设置投影信息，与原数据一样
-                            geoTransform = IDataSet.GetGeoTransform()
+                            # 璁剧疆鎶曞奖淇℃伅锛屼笌鍘熸暟鎹竴鏍?                            geoTransform = IDataSet.GetGeoTransform()
                             outDataset.SetGeoTransform(geoTransform)
                             proj = IDataSet.GetProjection()
                             outDataset.SetProjection(proj)
@@ -351,7 +336,8 @@ if __name__ == '__main__':
                             outband.SetNoDataValue(-9999)
                             outband.WriteArray(atc, 0, 0)
 
-    #关闭日志文件
+    #鍏抽棴鏃ュ織鏂囦欢
     LogFile.close()
+
 
 
