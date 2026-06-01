@@ -105,7 +105,7 @@ conda run -n atmocorr311 python scripts\run_gf.py `
 --ground-reflectance 0.36
 --aerosol-profile Continental
 --block-size 2048
---output-dtype int16
+--output-dtype int32
 ```
 
 参数说明：
@@ -115,7 +115,7 @@ conda run -n atmocorr311 python scripts\run_gf.py `
 - `--ground-reflectance`：6S 中使用的均一朗伯地表反射率。
 - `--aerosol-profile`：气溶胶类型，默认 `Continental`。
 - `--block-size`：块处理大小。
-- `--output-dtype`：输出数据类型，默认 `int16`。
+- `--output-dtype`：输出数据类型，默认 `int32`。
 
 输出反射率默认放大 `10000` 倍，nodata 为 `-9999`。
 

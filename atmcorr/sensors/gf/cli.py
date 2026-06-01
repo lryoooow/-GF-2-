@@ -21,7 +21,7 @@ def parse_args(argv: list[str] | None = None):
     parser.add_argument("--ground-reflectance", type=float, default=0.36)
     parser.add_argument("--aerosol-profile", default="Continental")
     parser.add_argument("--block-size", type=int, default=2048)
-    parser.add_argument("--output-dtype", choices=sorted(GDAL_DTYPES), default="int16")
+    parser.add_argument("--output-dtype", choices=sorted(GDAL_DTYPES), default="int32")
     return parser.parse_args(argv)
 
 

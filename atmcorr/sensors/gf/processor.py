@@ -41,7 +41,7 @@ class GFSceneFiles:
 class GFProcessOptions:
     fallback_year: str = "2019"
     block_size: int = 2048
-    output_dtype: str = "int16"
+    output_dtype: str = "int32"
     image_type: str = "MSS"
     sixs: SixSOptions = SixSOptions()
     dem_path: Path = DEFAULT_DEM_PATH
@@ -62,12 +62,13 @@ def find_gf_scenes(input_path: str | Path) -> list[Path]:
     if _first_match(MSS_IMAGE_PATTERNS, path):
         return [path]
 
-    scenes = []
-    for child in sorted(path.iterdir()):
-        if child.is_dir() and child.name.upper().startswith("GF"):
-            if _first_match(MSS_IMAGE_PATTERNS, child):
-                scenes.append(child)
-    return scenes
+    scenes = {
+        image_path.parent
+        for pattern in MSS_IMAGE_PATTERNS
+        for image_path in path.rglob(pattern)
+        if image_path.is_file()
+    }
+    return sorted(scenes)
 
 
 def locate_scene_files(scene_dir: str | Path) -> GFSceneFiles:
